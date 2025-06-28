@@ -6,7 +6,7 @@ import os
 import requests
 from dotenv import load_dotenv
 import os
-from openai import OpenAI
+# from openai import OpenAI
 # client = OpenAI()
 app = FastAPI()
 
@@ -85,11 +85,17 @@ def extract_skills(input: JobInput):
         # Try to parse the skills from the response
         content = result["choices"][0]["message"]["content"]
         import json as pyjson
-        skills = pyjson.loads(content)
-        if isinstance(skills, list):
-            return {"skills": skills}
+        import re
+        # Extract JSON array from the content using regex
+        match = re.search(r'\[.*?\]', content, re.DOTALL)
+        if match:
+            skills = pyjson.loads(match.group(0))
+            if isinstance(skills, list):
+                return {"skills": skills}
+            else:
+                return {"error": "Unexpected response format from GPT-4.1."}
         else:
-            return {"error": "Unexpected response format from GPT-4.1."}
+            return {"error": "No JSON array found in GPT-4.1 response."}
     except Exception as e:
         return {"error": f"Failed to extract skills: {str(e)}"}
 
